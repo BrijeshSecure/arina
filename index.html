@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coming Soon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script 
+  src="https://plum-rat-179795.hostingersite.com/widget-loader.js" 
+  data-api-key="jpu01lysfbr9yk83iuxzr6"
+  data-position="left"
+    data-theme="dark"
+    data-primary-color="#7c3aed"
+    >
+</script>
+    <style>
+        :root {
+            --ink: #0a0a0f;
+            --cream: #f5f0e8;
+            --gold: #c9a84c;
+            --gold-light: #e8d08a;
+            --rose: #e8826a;
+            --teal: #4ecdc4;
+            --text-muted: rgba(245,240,232,0.55);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--ink);
+            color: var(--cream);
+            min-height: 100vh;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* Custom cursor */
+        .cursor {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            background: var(--gold);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transition: transform 0.1s;
+        }
+        .cursor-ring {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 1.5px solid rgba(201,168,76,0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transition: transform 0.3s ease, width 0.3s, height 0.3s;
+        }
+
+        /* Three.js canvas */
+        #three-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+        }
+
+        /* Noise overlay */
+        .noise {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0.04;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 256px;
+        }
+
+        /* Main layout */
+        .scene {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            padding: 0;
+        }
+
+        /* Header bar */
+        .topbar {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 32px 60px;
+            border-bottom: 1px solid rgba(245,240,232,0.08);
+            opacity: 0;
+        }
+
+        .brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: var(--cream);
+        }
+        .brand span { color: var(--gold); }
+
+        .topbar-right {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+        .topbar-link {
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .topbar-link:hover { color: var(--gold); }
+
+        /* Left panel – main content */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 80px 60px 80px 60px;
+            position: relative;
+        }
+
+        .eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 32px;
+            opacity: 0;
+        }
+        .eyebrow-line {
+            width: 40px;
+            height: 1px;
+            background: var(--gold);
+        }
+        .eyebrow-text {
+            font-size: 0.72rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--gold);
+            font-weight: 500;
+        }
+
+        .headline {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(3.5rem, 6vw, 7rem);
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.02em;
+            margin-bottom: 0;
+            overflow: hidden;
+        }
+        .headline-line {
+            display: block;
+            overflow: hidden;
+        }
+        .headline-line span {
+            display: block;
+            transform: translateY(110%);
+        }
+
+        .headline .accent {
+            color: transparent;
+            -webkit-text-stroke: 1.5px var(--gold);
+            font-style: italic;
+        }
+
+        .sub-block {
+            margin-top: 40px;
+            opacity: 0;
+        }
+        .sub {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            line-height: 1.75;
+            max-width: 400px;
+            font-weight: 300;
+        }
+
+        /* Email form */
+        .form-block {
+            margin-top: 50px;
+            opacity: 0;
+        }
+        .form-label {
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 14px;
+            display: block;
+        }
+        .form-row {
+            display: flex;
+            gap: 0;
+            max-width: 420px;
+            border: 1px solid rgba(201,168,76,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        .form-row:focus-within {
+            border-color: var(--gold);
+        }
+        .form-input {
+            flex: 1;
+            background: rgba(245,240,232,0.04);
+            border: none;
+            outline: none;
+            padding: 16px 20px;
+            color: var(--cream);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+        }
+        .form-input::placeholder { color: rgba(245,240,232,0.3); }
+        .form-btn {
+            background: var(--gold);
+            color: var(--ink);
+            border: none;
+            padding: 16px 24px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .form-btn:hover { background: var(--gold-light); }
+
+        /* Countdown */
+        .countdown-block {
+            margin-top: 60px;
+            display: flex;
+            gap: 30px;
+            opacity: 0;
+        }
+        .count-item { text-align: center; }
+        .count-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: var(--cream);
+            display: block;
+            line-height: 1;
+        }
+        .count-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        .count-sep {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--gold);
+            align-self: flex-start;
+            padding-top: 4px;
+            opacity: 0.5;
+        }
+
+        /* Right panel – image collage */
+        .right-panel {
+            position: relative;
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        .img-collage {
+            position: absolute;
+            inset: 0;
+        }
+
+        .img-card {
+            position: absolute;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            opacity: 0;
+        }
+        .img-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .img-card-1 {
+            width: 260px; height: 340px;
+            top: 60px; left: 40px;
+            transform: rotate(-4deg);
+        }
+        .img-card-2 {
+            width: 200px; height: 260px;
+            top: 120px; left: 230px;
+            transform: rotate(3deg);
+        }
+        .img-card-3 {
+            width: 230px; height: 180px;
+            bottom: 160px; left: 60px;
+            transform: rotate(-2deg);
+        }
+        .img-card-4 {
+            width: 180px; height: 220px;
+            bottom: 80px; left: 260px;
+            transform: rotate(5deg);
+        }
+
+        /* Image overlays */
+        .img-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(10,10,15,0.6));
+        }
+
+        .img-tag {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            z-index: 2;
+            background: rgba(201,168,76,0.9);
+            color: var(--ink);
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+
+        /* Bottom bar */
+        .bottombar {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 60px;
+            border-top: 1px solid rgba(245,240,232,0.08);
+            opacity: 0;
+        }
+        .bottombar-left {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+        }
+        .social-links {
+            display: flex;
+            gap: 24px;
+        }
+        .social-link {
+            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .social-link:hover { color: var(--gold); }
+
+        /* Horizontal gold bar accent */
+        .gold-bar {
+            position: absolute;
+            left: 0; bottom: 0;
+            width: 100%; height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--rose), var(--teal));
+            transform: scaleX(0);
+            transform-origin: left;
+        }
+
+        /* Floating badge */
+        .badge {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            width: 100px;
+            height: 100px;
+            z-index: 20;
+            opacity: 0;
+        }
+        .badge svg {
+            animation: rotateSlow 12s linear infinite;
+        }
+        .badge-dot {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px; height: 12px;
+            background: var(--gold);
+            border-radius: 50%;
+        }
+
+        @keyframes rotateSlow {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 900px) {
+            .scene {
+                grid-template-columns: 1fr;
+            }
+            .right-panel { display: none; }
+            .topbar, .bottombar { padding: 24px 30px; }
+            .left-panel { padding: 60px 30px; }
+            .headline { font-size: clamp(3rem, 10vw, 5rem); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Three.js WebGL canvas -->
+<canvas id="three-canvas"></canvas>
+<div class="noise"></div>
+
+<div class="scene">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+        <div class="brand">Lux<span>.</span>Studio</div>
+        <nav class="topbar-right">
+            <a href="#" class="topbar-link">About</a>
+            <a href="#" class="topbar-link">Portfolio</a>
+            <a href="#" class="topbar-link">Contact</a>
+        </nav>
+    </header>
+
+    <!-- Left Content -->
+    <div class="left-panel">
+        <div class="eyebrow">
+            <div class="eyebrow-line"></div>
+            <span class="eyebrow-text">Under Construction</span>
+        </div>
+
+        <h1 class="headline">
+            <span class="headline-line"><span>Something</span></span>
+            <span class="headline-line"><span class="accent">Remarkable</span></span>
+            <span class="headline-line"><span>Is Coming.</span></span>
+        </h1>
+
+        <div class="sub-block">
+            <p class="sub">We're crafting an experience that will change the way you see design. Stay close — the wait will be worth it.</p>
+        </div>
+
+        <div class="form-block">
+            <label class="form-label">Get early access</label>
+            <div class="form-row">
+                <input class="form-input" type="email" placeholder="your@email.com">
+                <button class="form-btn">Notify Me</button>
+            </div>
+        </div>
+
+        <div class="countdown-block" id="countdown">
+            <div class="count-item">
+                <span class="count-number" id="cd-days">00</span>
+                <div class="count-label">Days</div>
+            </div>
+            <div class="count-sep">:</div>
+            <div class="count-item">
+                <span class="count-number" id="cd-hours">00</span>
+                <div class="count-label">Hours</div>
+            </div>
+            <div class="count-sep">:</div>
+            <div class="count-item">
+                <span class="count-number" id="cd-mins">00</span>
+                <div class="count-label">Minutes</div>
+            </div>
+            <div class="count-sep">:</div>
+            <div class="count-item">
+                <span class="count-number" id="cd-secs">00</span>
+                <div class="count-label">Seconds</div>
+            </div>
+        </div>
+
+        <div class="gold-bar" id="goldBar"></div>
+    </div>
+
+    <!-- Right Collage -->
+    <div class="right-panel">
+        <div class="img-collage">
+
+            <div class="img-card img-card-1">
+                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&q=80" alt="Design 1">
+                <div class="img-tag">Creative</div>
+            </div>
+
+            <div class="img-card img-card-2">
+                <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80" alt="Design 2">
+                <div class="img-tag">Motion</div>
+            </div>
+
+            <div class="img-card img-card-3">
+                <img src="https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=500&q=80" alt="Design 3">
+                <div class="img-tag">Space</div>
+            </div>
+
+            <div class="img-card img-card-4">
+                <img src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=500&q=80" alt="Design 4">
+                <div class="img-tag">Abstract</div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <footer class="bottombar">
+        <div class="bottombar-left">© 2026 LuxStudio — All rights reserved</div>
+        <nav class="social-links">
+            <a href="#" class="social-link">Twitter</a>
+            <a href="#" class="social-link">Instagram</a>
+            <a href="#" class="social-link">Dribbble</a>
+            <a href="#" class="social-link">LinkedIn</a>
+        </nav>
+    </footer>
+
+</div>
+
+<!-- Rotating badge -->
+<div class="badge" id="badge">
+    <svg viewBox="0 0 100 100" width="100" height="100">
+        <defs>
+            <path id="circle-path" d="M 50,50 m -30,0 a 30,30 0 1,1 60,0 a 30,30 0 1,1 -60,0"/>
+        </defs>
+        <text fill="#c9a84c" font-size="10.5" font-family="DM Sans, sans-serif" letter-spacing="2.4">
+            <textPath href="#circle-path">COMING SOON • COMING SOON • </textPath>
+        </text>
+    </svg>
+    <div class="badge-dot"></div>
+</div>
+
+<script>
+// ─── Three.js Scene ───────────────────────────────────────────────
+const canvas = document.getElementById('three-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.z = 5;
+
+// Torus knot – primary sculptural object
+const knotGeo = new THREE.TorusKnotGeometry(1.2, 0.35, 200, 32, 2, 3);
+const knotMat = new THREE.MeshStandardMaterial({
+    color: 0xc9a84c,
+    metalness: 0.9,
+    roughness: 0.15,
+    wireframe: false
+});
+const knotMesh = new THREE.Mesh(knotGeo, knotMat);
+knotMesh.position.set(3.5, 0, -1);
+scene.add(knotMesh);
+
+// Wireframe overlay
+const knotWire = new THREE.Mesh(knotGeo, new THREE.MeshBasicMaterial({ color: 0xe8d08a, wireframe: true, transparent: true, opacity: 0.07 }));
+knotWire.position.copy(knotMesh.position);
+scene.add(knotWire);
+
+// Icosahedron
+const icoGeo = new THREE.IcosahedronGeometry(0.7, 1);
+const icoMat = new THREE.MeshStandardMaterial({ color: 0xe8826a, metalness: 0.7, roughness: 0.2 });
+const icoMesh = new THREE.Mesh(icoGeo, icoMat);
+icoMesh.position.set(-3, 1.5, -2);
+scene.add(icoMesh);
+
+// Floating torus
+const torusGeo = new THREE.TorusGeometry(0.5, 0.12, 32, 80);
+const torusMat = new THREE.MeshStandardMaterial({ color: 0x4ecdc4, metalness: 0.6, roughness: 0.3 });
+const torusMesh = new THREE.Mesh(torusGeo, torusMat);
+torusMesh.position.set(-4, -1.5, -1);
+scene.add(torusMesh);
+
+// Sphere grid – background particles
+const sphereGroup = new THREE.Group();
+for (let i = 0; i < 80; i++) {
+    const s = new THREE.Mesh(
+        new THREE.SphereGeometry(Math.random() * 0.06 + 0.02, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xc9a84c, transparent: true, opacity: Math.random() * 0.5 + 0.1 })
+    );
+    s.position.set((Math.random() - 0.5) * 20, (Math.random() - 0.5) * 12, (Math.random() - 0.5) * 10 - 3);
+    sphereGroup.add(s);
+}
+scene.add(sphereGroup);
+
+// Lights
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambientLight);
+const pointLight1 = new THREE.PointLight(0xc9a84c, 3, 15);
+pointLight1.position.set(3, 3, 3);
+scene.add(pointLight1);
+const pointLight2 = new THREE.PointLight(0xe8826a, 2, 15);
+pointLight2.position.set(-3, -2, 2);
+scene.add(pointLight2);
+const pointLight3 = new THREE.PointLight(0x4ecdc4, 1.5, 15);
+pointLight3.position.set(0, 3, 1);
+scene.add(pointLight3);
+
+// Mouse influence
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', e => {
+    mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+// Animate Three.js
+const clock = new THREE.Clock();
+function animateThree() {
+    requestAnimationFrame(animateThree);
+    const t = clock.getElapsedTime();
+
+    knotMesh.rotation.x = t * 0.2 + mouseY * 0.3;
+    knotMesh.rotation.y = t * 0.35 + mouseX * 0.3;
+    knotWire.rotation.copy(knotMesh.rotation);
+
+    icoMesh.rotation.x = t * 0.3;
+    icoMesh.rotation.y = t * 0.2;
+    icoMesh.position.y = 1.5 + Math.sin(t * 0.7) * 0.3;
+
+    torusMesh.rotation.x = t * 0.5;
+    torusMesh.rotation.z = t * 0.3;
+    torusMesh.position.y = -1.5 + Math.sin(t * 0.5 + 1) * 0.2;
+
+    sphereGroup.rotation.y = t * 0.03;
+
+    camera.position.x += (mouseX * 0.3 - camera.position.x) * 0.03;
+    camera.position.y += (mouseY * 0.2 - camera.position.y) * 0.03;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+}
+animateThree();
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ─── Custom Cursor ────────────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+    gsap.to(cursor, { x: e.clientX - 6, y: e.clientY - 6, duration: 0.1 });
+    rx += (e.clientX - 20 - rx) * 0.12;
+    ry += (e.clientY - 20 - ry) * 0.12;
+    gsap.set(ring, { x: rx, y: ry });
+});
+
+document.querySelectorAll('a, button, .img-card').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+        gsap.to(ring, { scale: 1.8, borderColor: 'rgba(201,168,76,0.8)', duration: 0.3 });
+        gsap.to(cursor, { scale: 0.5, duration: 0.3 });
+    });
+    el.addEventListener('mouseleave', () => {
+        gsap.to(ring, { scale: 1, borderColor: 'rgba(201,168,76,0.5)', duration: 0.3 });
+        gsap.to(cursor, { scale: 1, duration: 0.3 });
+    });
+});
+
+// ─── GSAP Entrance Animations ─────────────────────────────────────
+const tl = gsap.timeline({ delay: 0.3 });
+
+// Topbar
+tl.to('.topbar', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' })
+
+// Eyebrow
+  .to('.eyebrow', { opacity: 1, x: 0, duration: 0.7, ease: 'power3.out' }, '-=0.4')
+
+// Headline lines
+  .to('.headline-line span', {
+        y: '0%',
+        duration: 1.1,
+        ease: 'expo.out',
+        stagger: 0.12
+    }, '-=0.3')
+
+// Subtitle
+  .to('.sub-block', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, '-=0.4')
+
+// Form
+  .to('.form-block', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, '-=0.3')
+
+// Countdown
+  .to('.countdown-block', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, '-=0.3')
+
+// Gold bar
+  .to('#goldBar', { scaleX: 1, duration: 1.5, ease: 'expo.inOut' }, '-=0.5')
+
+// Image cards stagger
+  .to('.img-card', {
+        opacity: 1,
+        y: 0,
+        rotation: (i, el) => parseFloat(el.style.transform?.match(/rotate\(([^)]+)\)/)?.[1] || 0),
+        duration: 0.9,
+        ease: 'back.out(1.4)',
+        stagger: 0.15
+    }, '-=1.2')
+
+// Bottom bar
+  .to('.bottombar', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.4')
+
+// Badge
+  .to('#badge', { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(1.7)' }, '-=0.5');
+
+// Set initial states
+gsap.set(['.sub-block', '.form-block', '.countdown-block'], { y: 20 });
+gsap.set('.img-card', { y: 40 });
+gsap.set('#badge', { scale: 0.5 });
+
+// Parallax on image cards on mouse move
+document.addEventListener('mousemove', e => {
+    const xn = (e.clientX / window.innerWidth - 0.5);
+    const yn = (e.clientY / window.innerHeight - 0.5);
+    document.querySelectorAll('.img-card').forEach((card, i) => {
+        const depth = (i + 1) * 8;
+        gsap.to(card, {
+            x: xn * depth,
+            y: yn * depth,
+            duration: 1.2,
+            ease: 'power2.out'
+        });
+    });
+});
+
+// ─── Countdown Timer ──────────────────────────────────────────────
+const launch = new Date();
+launch.setDate(launch.getDate() + 47);
+launch.setHours(0, 0, 0, 0);
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function tick() {
+    const now = new Date();
+    const diff = Math.max(0, launch - now);
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+
+    document.getElementById('cd-days').textContent = pad(days);
+    document.getElementById('cd-hours').textContent = pad(hours);
+    document.getElementById('cd-mins').textContent = pad(mins);
+    document.getElementById('cd-secs').textContent = pad(secs);
+}
+tick();
+setInterval(tick, 1000);
+
+// GSAP flip animation on second number change
+setInterval(() => {
+    gsap.fromTo('#cd-secs', { y: -8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: 'power2.out' });
+}, 1000);
+</script>
+</body>
+</html>
